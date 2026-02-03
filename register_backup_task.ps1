@@ -32,6 +32,10 @@ if (-not (Test-Path $ScriptPath)) {
     exit 1
 }
 
+# Sanitize paths to avoid "trailing backslash escaping quote" issues in command line arguments
+$SourcePath = $SourcePath.TrimEnd('\')
+$DestPath = $DestPath.TrimEnd('\')
+
 # Construct the arguments string
 $Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$ScriptPath`" -SourcePath `"$SourcePath`" -DestPath `"$DestPath`" -LogPath `"$LogPath`" -LockName `"$LockName`""
 
