@@ -49,6 +49,21 @@ The `register_backup_task.ps1` script supports common Cron patterns:
 | **Daily at 02:30** | `30 2 * * *` | `-CronSchedule "30 2 * * *"` |
 | **Weekly (Mon) at 08:00** | `0 8 * * 1` | `-CronSchedule "0 8 * * 1"` |
 
+## Using `gsudo` (Administrator Access)
+
+If you are running in a non-elevated shell (or over SSH), you can use `gsudo` to run the registration script as Administrator.
+
+**Installation:**
+```powershell
+winget install gsudo
+```
+
+**Usage:**
+**Important:** When passing paths with spaces, wrap the command in `{ curly braces }`. This ensures arguments are passed correctly.
+```powershell
+gsudo { .\register_backup_task.ps1 -TaskName "LabData" -SourcePath "D:\Lab Data" -DestPath "E:\Backups\Lab Data" -CronSchedule "0 2 * * *" }
+```
+
 ## Checking and Editing Schedules
 
 ### 1. Check Existing Tasks
@@ -73,6 +88,14 @@ The easiest way to change a schedule is to run the registration script again wit
 2.  Navigate to **Task Scheduler Library**.
 3.  Find your task in the list.
 4.  Double-click it, go to the **Triggers** tab, and edit the trigger manually.
+
+## Deleting a Task
+
+To remove a scheduled backup task, run PowerShell as Administrator (or use `gsudo`):
+
+```powershell
+Unregister-ScheduledTask -TaskName "MyBackup" -Confirm:$false
+```
 
 ## Notes
 *   **Task Scheduler:** `register_backup_task.ps1` must be run as **Administrator**.
