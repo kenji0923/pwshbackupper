@@ -88,13 +88,16 @@ else {
 
 $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries:$false -DontStopIfGoingOnBatteries:$false
 
+# Prefix the task name for Task Scheduler display/organization
+$ScheduledTaskName = "PwshBackupper-$TaskName"
+
 # Register the Task
 try {
     # Unregister if exists to allow update
-    Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName $ScheduledTaskName -Confirm:$false -ErrorAction SilentlyContinue
     
-    Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Settings $Settings -Description "Backup task. $ScheduleDesc. Source: $SourcePath, Dest: $DestPath" | Out-Null
-    Write-Host "Success! Task '$TaskName' registered."
+    Register-ScheduledTask -TaskName $ScheduledTaskName -Action $Action -Trigger $Trigger -Settings $Settings -Description "Backup task. $ScheduleDesc. Source: $SourcePath, Dest: $DestPath" | Out-Null
+    Write-Host "Success! Task '$ScheduledTaskName' registered."
     Write-Host "Schedule: $ScheduleDesc"
 } catch {
     Write-Error "Failed to register task. Ensure you are running this script as Administrator."

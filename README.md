@@ -91,10 +91,10 @@ The easiest way to change a schedule is to run the registration script again wit
 
 ## Deleting a Task
 
-To remove a scheduled backup task, run PowerShell as Administrator (or use `gsudo`):
+Tasks are registered with the prefix `PwshBackupper-`. To remove a scheduled backup task, run PowerShell as Administrator (or use `gsudo`) and include this prefix:
 
 ```powershell
-Unregister-ScheduledTask -TaskName "MyBackup" -Confirm:$false
+Unregister-ScheduledTask -TaskName "PwshBackupper-MyBackup" -Confirm:$false
 ```
 
 ## Notes
