@@ -66,8 +66,10 @@ try {
 
     # Execute Robocopy
     # Robocopy returns specific exit codes, we capture them to avoid script errors on partial success
-    $RoboArgs = @($SourcePath, $DestPath) + $RoboOptions
-    $Process = Start-Process -FilePath "robocopy.exe" -ArgumentList $RoboArgs -NoNewWindow -PassThru -Wait
+    # NOTE: We construct a single string for ArgumentList to ensure quotes are preserved for paths with spaces in PowerShell 5.1
+    $RoboArgsString = "`"$SourcePath`" `"$DestPath`" " + ($RoboOptions -join " ")
+    
+    $Process = Start-Process -FilePath "robocopy.exe" -ArgumentList $RoboArgsString -NoNewWindow -PassThru -Wait
     
     # Robocopy Exit Codes:
     # 0 = No files were copied (No change).
