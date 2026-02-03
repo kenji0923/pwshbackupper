@@ -49,6 +49,31 @@ The `register_backup_task.ps1` script supports common Cron patterns:
 | **Daily at 02:30** | `30 2 * * *` | `-CronSchedule "30 2 * * *"` |
 | **Weekly (Mon) at 08:00** | `0 8 * * 1` | `-CronSchedule "0 8 * * 1"` |
 
+## Checking and Editing Schedules
+
+### 1. Check Existing Tasks
+You can view your registered backup tasks using PowerShell:
+```powershell
+Get-ScheduledTask | Where-Object { $_.TaskName -like "*Backup*" } | Select-Object TaskName, State
+```
+To see the specific trigger for a task:
+```powershell
+(Get-ScheduledTask -TaskName "MyBackup").Triggers
+```
+
+### 2. Edit the Schedule (Frequency)
+**Method A: Re-run the Script (Recommended)**
+The easiest way to change a schedule is to run the registration script again with the *same* TaskName and the *new* schedule. It will overwrite the old trigger.
+```powershell
+.\register_backup_task.ps1 -TaskName "MyBackup" -CronSchedule "*/15 * * * *" ...
+```
+
+**Method B: Task Scheduler GUI**
+1.  Open **Task Scheduler** (search for it in the Start Menu).
+2.  Navigate to **Task Scheduler Library**.
+3.  Find your task in the list.
+4.  Double-click it, go to the **Triggers** tab, and edit the trigger manually.
+
 ## Notes
 *   **Task Scheduler:** `register_backup_task.ps1` must be run as **Administrator**.
 *   **Logs:** By default, logs are saved to `C:\Users\<User>\Logs\`.
