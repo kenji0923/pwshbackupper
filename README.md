@@ -4,7 +4,7 @@ A robust backup solution using PowerShell and Robocopy, featuring single-instanc
 
 ## Features
 
-*   **Robust Copying:** Uses `robocopy` for efficient, resume-able file mirroring.
+*   **Robust Copying:** Uses `robocopy` for efficient, resume-able file copying (Additive Backup). Files deleted from the source are **NOT** deleted from the destination.
 *   **Single Instance Locking:** Prevents overlapping backup runs using a named Mutex.
 *   **Logging:** automatically logs operations to a file.
 *   **Cron-style Scheduling:** Helper script to register Windows Scheduled Tasks using familiar Cron syntax.
