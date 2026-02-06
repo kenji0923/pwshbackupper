@@ -89,16 +89,20 @@ else {
 $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries:$false -DontStopIfGoingOnBatteries:$false
 
 # Prefix the task name for Task Scheduler display/organization
-$ScheduledTaskName = "PwshBackupper-$TaskName"
+$ScheduledTaskName = "PwshBackupper - $TaskName"
+
+# Create Principal to run as the current user, but Hidden (S4U) and with Highest Privileges
+$Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType S4U -RunLevel Highest
 
 # Register the Task
 try {
     # Unregister if exists to allow update
     Unregister-ScheduledTask -TaskName $ScheduledTaskName -Confirm:$false -ErrorAction SilentlyContinue
     
-    Register-ScheduledTask -TaskName $ScheduledTaskName -Action $Action -Trigger $Trigger -Settings $Settings -Description "Backup task. $ScheduleDesc. Source: $SourcePath, Dest: $DestPath" | Out-Null
+    Register-ScheduledTask -TaskName $ScheduledTaskName -Action $Action -Trigger $Trigger -Settings $Settings -Principal $Principal -Description "Backup task. $ScheduleDesc. Source: $SourcePath, Dest: $DestPath" | Out-Null
     Write-Host "Success! Task '$ScheduledTaskName' registered."
     Write-Host "Schedule: $ScheduleDesc"
+    Write-Host "Mode: Hidden (S4U)"
 } catch {
     Write-Error "Failed to register task. Ensure you are running this script as Administrator."
     Write-Error $_
