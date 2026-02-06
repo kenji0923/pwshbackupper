@@ -96,7 +96,7 @@ else {
 $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries:$false -DontStopIfGoingOnBatteries:$false
 
 # Prefix the task name for Task Scheduler display/organization
-$ScheduledTaskName = "PwshBackupper - $TaskName"
+$ScheduledTaskName = "PwshBackupper-$TaskName"
 
 # Create Principal to run as the current user, but Hidden (S4U) and with Highest Privileges
 $Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType S4U -RunLevel Highest
