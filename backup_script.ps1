@@ -19,7 +19,10 @@ param(
     [string]$LogPath = "$env:USERPROFILE\backup_log.txt",
 
     [Parameter(HelpMessage="Unique name for the mutex to prevent overlapping runs")]
-    [string]$LockName = "Global\MyUniqueBackupScriptLock"
+    [string]$LockName = "Global\MyUniqueBackupScriptLock",
+
+    [Parameter(HelpMessage="Optional path to check before starting (e.g. to verify a drive is mounted)")]
+    [string]$CheckPath
 )
 
 # Robocopy Options
@@ -53,6 +56,18 @@ try {
     if (-not (Test-Path $LogDir)) {
         New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
     }
+    
+    # Pre-flight check: Verify CheckPath existence if provided
+    if (-not [string]::IsNullOrWhiteSpace($CheckPath)) {
+        if (-not (Test-Path $CheckPath)) {
+            $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            $Msg = "[$Timestamp] SKIP: CheckPath not found: '$CheckPath'. Is the drive mounted?"
+            Add-Content -Path $LogPath -Value $Msg
+            Write-Warning $Msg
+            exit
+        }
+    }
+
     Start-Transcript -Path $LogPath -Append -Force
 
     Write-Output "Starting backup: $(Get-Date)"

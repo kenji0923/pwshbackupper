@@ -11,6 +11,9 @@ param(
     [Parameter(HelpMessage="Log file path")]
     [string]$LogPath,
     
+    [Parameter(HelpMessage="Optional path to check before running (e.g. D:\)")]
+    [string]$CheckPath,
+    
     [Parameter(Mandatory=$true, HelpMessage="Cron notation (e.g. '* * * * *' for every minute, '*/5 * * * *' for every 5m, '0 2 * * *' for daily at 2:00)")]
     [string]$CronSchedule
 )
@@ -38,6 +41,10 @@ $DestPath = $DestPath.TrimEnd('\')
 
 # Construct the arguments string
 $Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$ScriptPath`" -SourcePath `"$SourcePath`" -DestPath `"$DestPath`" -LogPath `"$LogPath`" -LockName `"$LockName`""
+if (-not [string]::IsNullOrWhiteSpace($CheckPath)) {
+    $CheckPath = $CheckPath.TrimEnd('\')
+    $Arguments += " -CheckPath `"$CheckPath`""
+}
 
 # Define Action
 $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $Arguments
