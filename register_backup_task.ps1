@@ -51,8 +51,8 @@ $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $Arguments
 
 # --- Cron Parsing Logic ---
 Write-Host "Parsing Cron Schedule: $CronSchedule"
-$parts = $CronSchedule -split '\s+'
-if ($parts.Count -ne 5) { throw "Invalid Cron format. Expected 5 fields (Min Hour Dom Month Dow)." }
+$parts = $CronSchedule.Trim() -split '\s+'
+if ($parts.Count -ne 5) { throw "Invalid Cron format. Expected 5 fields: minute hour day-of-month month day-of-week." }
 
 $min = $parts[0]
 $hour = $parts[1]
@@ -61,13 +61,38 @@ $month = $parts[3]
 $dow = $parts[4]
 
 $isAny = { param($v) $v -eq '*' }
-$isInterval = { param($v) $v -match '^\*/(\d+)$' }
+$isIntegerInRange = {
+    param(
+        [string]$Value,
+        [int]$MinValue,
+        [int]$MaxValue,
+        [string]$FieldName
+    )
+
+    if ($Value -notmatch '^\d+$') {
+        throw "Invalid $FieldName field '$Value'. Expected a number from $MinValue to $MaxValue."
+    }
+
+    $number = [int]$Value
+    if (($number -lt $MinValue) -or ($number -gt $MaxValue)) {
+        throw "Invalid $FieldName field '$Value'. Expected a number from $MinValue to $MaxValue."
+    }
+
+    return $number
+}
 
 # 1. Minute Interval (e.g. "* * * * *" or "*/5 * * * *")
 if ( (&$isAny $hour) -and (&$isAny $dom) -and (&$isAny $month) -and (&$isAny $dow) ) {
     $intervalMinutes = 1
-    if (&$isInterval $min) { $intervalMinutes = [int]$Matches[1] }
-    elseif (-not (&$isAny $min)) { throw "Specific minute with wildcards (Hourly) not supported yet. Use '*/n' or '*'. " }
+    if ($min -match '^\*/(\d+)$') {
+        $intervalMinutes = [int]$Matches[1]
+        if (($intervalMinutes -lt 1) -or ($intervalMinutes -gt 1439)) {
+            throw "Invalid minute interval '$min'. Expected an interval from */1 to */1439."
+        }
+    }
+    elseif (-not (&$isAny $min)) {
+        throw "Unsupported minute field '$min' with wildcard hour/day/month fields. Use '*' or '*/n'."
+    }
     
     # Run Once immediately, repeat every X minutes, for 20 years (indefinite-ish)
     $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes $intervalMinutes) -RepetitionDuration (New-TimeSpan -Days (365*20))
@@ -76,17 +101,23 @@ if ( (&$isAny $hour) -and (&$isAny $dom) -and (&$isAny $month) -and (&$isAny $do
 # 2. Daily (e.g. "30 2 * * *")
 elseif ( (&$isAny $dom) -and (&$isAny $month) -and (&$isAny $dow) ) {
     if ((&$isAny $min) -or (&$isAny $hour)) { throw "Daily schedule requires specific minute and hour (e.g. '30 2 * * *')." }
-    $Trigger = New-ScheduledTaskTrigger -Daily -At "$hour`:$min"
-    $ScheduleDesc = "Daily at $hour`:$min"
+    $minNumber = &$isIntegerInRange $min 0 59 "minute"
+    $hourNumber = &$isIntegerInRange $hour 0 23 "hour"
+    $timeOfDay = "{0:D2}:{1:D2}" -f $hourNumber, $minNumber
+    $Trigger = New-ScheduledTaskTrigger -Daily -At $timeOfDay
+    $ScheduleDesc = "Daily at $timeOfDay"
 }
 # 3. Weekly (e.g. "30 2 * * 1" -> Mon)
 elseif ( (&$isAny $dom) -and (&$isAny $month) ) {
     if ((&$isAny $min) -or (&$isAny $hour)) { throw "Weekly schedule requires specific minute and hour." }
+    $minNumber = &$isIntegerInRange $min 0 59 "minute"
+    $hourNumber = &$isIntegerInRange $hour 0 23 "hour"
     $daysMap = @{ 0="Sunday"; 1="Monday"; 2="Tuesday"; 3="Wednesday"; 4="Thursday"; 5="Friday"; 6="Saturday"; 7="Sunday" }
-    if (-not $daysMap.ContainsKey([int]$dow)) { throw "Invalid Day of Week: $dow (Use 0-7)" }
-    $dayName = $daysMap[[int]$dow]
-    $Trigger = New-ScheduledTaskTrigger -Weekly -At "$hour`:$min" -DaysOfWeek $dayName
-    $ScheduleDesc = "Weekly on $dayName at $hour`:$min"
+    $dowNumber = &$isIntegerInRange $dow 0 7 "day-of-week"
+    $dayName = $daysMap[$dowNumber]
+    $timeOfDay = "{0:D2}:{1:D2}" -f $hourNumber, $minNumber
+    $Trigger = New-ScheduledTaskTrigger -Weekly -At $timeOfDay -DaysOfWeek $dayName
+    $ScheduleDesc = "Weekly on $dayName at $timeOfDay"
 }
 else {
     throw "Complex Cron format '$CronSchedule' not supported by this simplified parser."
